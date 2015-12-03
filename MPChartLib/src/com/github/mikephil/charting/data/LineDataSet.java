@@ -6,17 +6,23 @@ import android.graphics.Color;
 import android.graphics.DashPathEffect;
 
 import com.github.mikephil.charting.utils.ColorTemplate;
+import com.github.mikephil.charting.formatter.DefaultFillFormatter;
+import com.github.mikephil.charting.formatter.FillFormatter;
 import com.github.mikephil.charting.utils.Utils;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class LineDataSet extends LineRadarDataSet<Entry> {
 
-    /** arraylist representing all colors that are used for the circles */
-    private ArrayList<Integer> mCircleColors = null;
-    
+    /** List representing all colors that are used for the circles */
+    private List<Integer> mCircleColors = null;
+
+    /** the color of the inner circles */
+    private int mCircleColorHole = Color.WHITE;
+
     /** the radius of the circle-shaped value indicators */
-    private float mCircleSize = 4f;
+    private float mCircleSize = 8f;
 
     /** sets the intensity of the cubic lines */
     private float mCubicIntensity = 0.2f;
@@ -24,13 +30,18 @@ public class LineDataSet extends LineRadarDataSet<Entry> {
     /** the path effect of this DataSet that makes dashed lines possible */
     private DashPathEffect mDashPathEffect = null;
 
+    /** formatter for customizing the position of the fill-line */
+    private FillFormatter mFillFormatter = new DefaultFillFormatter();
+
     /** if true, drawing circles is enabled */
     private boolean mDrawCircles = true;
 
     /** if true, cubic lines are drawn instead of linear */
     private boolean mDrawCubic = false;
 
-    public LineDataSet(ArrayList<Entry> yVals, String label) {
+    private boolean mDrawCircleHole = true;
+
+    public LineDataSet(List<Entry> yVals, String label) {
         super(yVals, label);
 
         // mCircleSize = Utils.convertDpToPixel(4f);
@@ -47,7 +58,7 @@ public class LineDataSet extends LineRadarDataSet<Entry> {
     @Override
     public DataSet<Entry> copy() {
 
-        ArrayList<Entry> yVals = new ArrayList<Entry>();
+        List<Entry> yVals = new ArrayList<Entry>();
 
         for (int i = 0; i < mYVals.size(); i++) {
             yVals.add(mYVals.get(i).copy());
@@ -108,10 +119,12 @@ public class LineDataSet extends LineRadarDataSet<Entry> {
     }
 
     /**
-     * Enables the line to be drawn in dashed mode, e.g. like this "- - - - - -"
+     * Enables the line to be drawn in dashed mode, e.g. like this
+     * "- - - - - -". THIS ONLY WORKS IF HARDWARE-ACCELERATION IS TURNED OFF.
+     * Keep in mind that hardware acceleration boosts performance.
      * 
      * @param lineLength the length of the line pieces
-     * @param spaceLength the length of space inbetween the pieces
+     * @param spaceLength the length of space in between the pieces
      * @param phase offset, in degrees (normally, use 0)
      */
     public void enableDashedLine(float lineLength, float spaceLength, float phase) {
@@ -166,7 +179,7 @@ public class LineDataSet extends LineRadarDataSet<Entry> {
 
     /**
      * If set to true, the linechart lines are drawn in cubic-style instead of
-     * linear. Default: false
+     * linear. This affects performance! Default: false
      * 
      * @param enabled
      */
@@ -190,7 +203,7 @@ public class LineDataSet extends LineRadarDataSet<Entry> {
      * 
      * @return
      */
-    public ArrayList<Integer> getCircleColors() {
+    public List<Integer> getCircleColors() {
         return mCircleColors;
     }
 
@@ -214,7 +227,7 @@ public class LineDataSet extends LineRadarDataSet<Entry> {
      * 
      * @param colors
      */
-    public void setCircleColors(ArrayList<Integer> colors) {
+    public void setCircleColors(List<Integer> colors) {
         mCircleColors = colors;
     }
 
@@ -243,7 +256,7 @@ public class LineDataSet extends LineRadarDataSet<Entry> {
      */
     public void setCircleColors(int[] colors, Context c) {
 
-        ArrayList<Integer> clrs = new ArrayList<Integer>();
+        List<Integer> clrs = new ArrayList<Integer>();
 
         for (int color : colors) {
             clrs.add(c.getResources().getColor(color));
@@ -268,5 +281,58 @@ public class LineDataSet extends LineRadarDataSet<Entry> {
      */
     public void resetCircleColors() {
         mCircleColors = new ArrayList<Integer>();
+    }
+
+    /**
+     * Sets the color of the inner circle of the line-circles.
+     * 
+     * @param color
+     */
+    public void setCircleColorHole(int color) {
+        mCircleColorHole = color;
+    }
+
+    /**
+     * Returns the color of the inner circle.
+     * 
+     * @return
+     */
+    public int getCircleHoleColor() {
+        return mCircleColorHole;
+    }
+
+    /**
+     * Set this to true to allow drawing a hole in each data circle.
+     * 
+     * @param enabled
+     */
+    public void setDrawCircleHole(boolean enabled) {
+        mDrawCircleHole = enabled;
+    }
+
+    public boolean isDrawCircleHoleEnabled() {
+        return mDrawCircleHole;
+    }
+
+    /**
+     * Sets a custom FillFormatter to the chart that handles the position of the
+     * filled-line for each DataSet. Set this to null to use the default logic.
+     *
+     * @param formatter
+     */
+    public void setFillFormatter(FillFormatter formatter) {
+
+        if (formatter == null)
+            mFillFormatter = new DefaultFillFormatter();
+        else
+            mFillFormatter = formatter;
+    }
+
+    /**
+     * Returns the FillFormatter that is set for this DataSet.
+     * @return
+     */
+    public FillFormatter getFillFormatter() {
+        return mFillFormatter;
     }
 }

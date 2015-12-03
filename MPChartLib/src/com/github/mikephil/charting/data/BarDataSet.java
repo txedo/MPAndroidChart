@@ -4,8 +4,9 @@ package com.github.mikephil.charting.data;
 import android.graphics.Color;
 
 import java.util.ArrayList;
+import java.util.List;
 
-public class BarDataSet extends BarLineScatterCandleRadarDataSet<BarEntry> {
+public class BarDataSet extends BarLineScatterCandleBubbleDataSet<BarEntry> {
 
     /** space indicator between the bars 0.1f == 10 % */
     private float mBarSpace = 0.15f;
@@ -34,7 +35,7 @@ public class BarDataSet extends BarLineScatterCandleRadarDataSet<BarEntry> {
             "Stack"
     };
 
-    public BarDataSet(ArrayList<BarEntry> yVals, String label) {
+    public BarDataSet(List<BarEntry> yVals, String label) {
         super(yVals, label);
 
         mHighLightColor = Color.rgb(0, 0, 0);
@@ -45,8 +46,8 @@ public class BarDataSet extends BarLineScatterCandleRadarDataSet<BarEntry> {
 
     @Override
     public DataSet<BarEntry> copy() {
-        
-        ArrayList<BarEntry> yVals = new ArrayList<BarEntry>();
+
+        List<BarEntry> yVals = new ArrayList<BarEntry>();
 
         for (int i = 0; i < mYVals.size(); i++) {
             yVals.add(((BarEntry) mYVals.get(i)).copy());
@@ -68,7 +69,7 @@ public class BarDataSet extends BarLineScatterCandleRadarDataSet<BarEntry> {
      * Calculates the total number of entries this DataSet represents, including
      * stacks. All values belonging to a stack are calculated separately.
      */
-    private void calcEntryCountIncludingStacks(ArrayList<BarEntry> yVals) {
+    private void calcEntryCountIncludingStacks(List<BarEntry> yVals) {
 
         mEntryCountStacks = 0;
 
@@ -87,7 +88,7 @@ public class BarDataSet extends BarLineScatterCandleRadarDataSet<BarEntry> {
      * calculates the maximum stacksize that occurs in the Entries array of this
      * DataSet
      */
-    private void calcStackSize(ArrayList<BarEntry> yVals) {
+    private void calcStackSize(List<BarEntry> yVals) {
 
         for (int i = 0; i < yVals.size(); i++) {
 
@@ -95,6 +96,56 @@ public class BarDataSet extends BarLineScatterCandleRadarDataSet<BarEntry> {
 
             if (vals != null && vals.length > mStackSize)
                 mStackSize = vals.length;
+        }
+    }
+
+    @Override
+    protected void calcMinMax(int start, int end) {
+        final int yValCount = mYVals.size();
+
+        if (yValCount == 0)
+            return;
+
+        int endValue;
+
+        if (end == 0 || end >= yValCount)
+            endValue = yValCount - 1;
+        else
+            endValue = end;
+
+        mLastStart = start;
+        mLastEnd = endValue;
+
+        mYMin = Float.MAX_VALUE;
+        mYMax = -Float.MAX_VALUE;
+
+        for (int i = start; i <= endValue; i++) {
+
+            BarEntry e = mYVals.get(i);
+
+            if (e != null && !Float.isNaN(e.getVal())) {
+
+                if(e.getVals() == null) {
+
+                    if (e.getVal() < mYMin)
+                        mYMin = e.getVal();
+
+                    if (e.getVal() > mYMax)
+                        mYMax = e.getVal();
+                } else {
+
+                    if (-e.getNegativeSum() < mYMin)
+                        mYMin = -e.getNegativeSum();
+
+                    if (e.getPositiveSum() > mYMax)
+                        mYMax = e.getPositiveSum();
+                }
+            }
+        }
+
+        if (mYMin == Float.MAX_VALUE) {
+            mYMin = 0.f;
+            mYMax = 0.f;
         }
     }
 
@@ -106,6 +157,15 @@ public class BarDataSet extends BarLineScatterCandleRadarDataSet<BarEntry> {
      */
     public int getStackSize() {
         return mStackSize;
+    }
+
+    /**
+     * Returns true if this DataSet is stacked (stacksize > 1) or not.
+     * 
+     * @return
+     */
+    public boolean isStacked() {
+        return mStackSize > 1 ? true : false;
     }
 
     /**
@@ -137,7 +197,7 @@ public class BarDataSet extends BarLineScatterCandleRadarDataSet<BarEntry> {
     }
 
     /**
-     * sets the space between the bars in percent of the total bar width
+     * sets the space between the bars in percent (0-100) of the total bar width
      * 
      * @param percent
      */

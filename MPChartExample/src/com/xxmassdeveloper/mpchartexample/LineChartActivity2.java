@@ -13,19 +13,23 @@ import android.widget.SeekBar.OnSeekBarChangeListener;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.github.mikephil.charting.charts.BarLineChartBase.BorderPosition;
 import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.Legend;
+import com.github.mikephil.charting.components.Legend.LegendForm;
+import com.github.mikephil.charting.components.Legend.LegendPosition;
+import com.github.mikephil.charting.components.XAxis;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.components.YAxis.AxisDependency;
+import com.github.mikephil.charting.data.DataSet;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
 import com.github.mikephil.charting.data.filter.Approximator;
 import com.github.mikephil.charting.data.filter.Approximator.ApproximatorType;
-import com.github.mikephil.charting.interfaces.OnChartValueSelectedListener;
+import com.github.mikephil.charting.listener.OnChartValueSelectedListener;
 import com.github.mikephil.charting.utils.ColorTemplate;
-import com.github.mikephil.charting.utils.Legend;
-import com.github.mikephil.charting.utils.Legend.LegendForm;
-import com.github.mikephil.charting.utils.XLabels;
-import com.github.mikephil.charting.utils.YLabels;
+import com.github.mikephil.charting.highlight.Highlight;
+import com.xxmassdeveloper.mpchartexample.custom.MyFillFormatter;
 import com.xxmassdeveloper.mpchartexample.notimportant.DemoBase;
 
 import java.util.ArrayList;
@@ -57,47 +61,30 @@ public class LineChartActivity2 extends DemoBase implements OnSeekBarChangeListe
 
         mChart = (LineChart) findViewById(R.id.chart1);
         mChart.setOnChartValueSelectedListener(this);
-        mChart.setValueTextColor(Color.WHITE);
-
-        mChart.setUnit(" $");
-        mChart.setDrawUnitsInChart(true);
-
-        // if enabled, the chart will always start at zero on the y-axis
-        mChart.setStartAtZero(false);
-
-        // disable the drawing of values into the chart
-        mChart.setDrawYValues(false);
-
-        mChart.setDrawBorder(true);
-        mChart.setBorderPositions(new BorderPosition[] {
-                BorderPosition.BOTTOM
-        });
-
+        
         // no description text
         mChart.setDescription("");
         mChart.setNoDataTextDescription("You need to provide data for the chart.");
 
-        // enable value highlighting
-        mChart.setHighlightEnabled(true);
-
         // enable touch gestures
         mChart.setTouchEnabled(true);
+        
+        mChart.setDragDecelerationFrictionCoef(0.9f);
 
         // enable scaling and dragging
         mChart.setDragEnabled(true);
         mChart.setScaleEnabled(true);
         mChart.setDrawGridBackground(false);
-        mChart.setDrawVerticalGrid(false);
-        mChart.setDrawHorizontalGrid(false);
+        mChart.setHighlightPerDragEnabled(true);
 
         // if disabled, scaling can be done on x- and y-axis separately
         mChart.setPinchZoom(true);
 
         // set an alternative background color
-        mChart.setBackgroundColor(Color.GRAY);
+        mChart.setBackgroundColor(Color.LTGRAY);
 
         // add data
-        setData(45, 100);
+        setData(20, 30);
 
         mChart.animateX(2500);
 
@@ -110,15 +97,32 @@ public class LineChartActivity2 extends DemoBase implements OnSeekBarChangeListe
         // l.setPosition(LegendPosition.LEFT_OF_CHART);
         l.setForm(LegendForm.LINE);
         l.setTypeface(tf);
+        l.setTextSize(11f);
         l.setTextColor(Color.WHITE);
+        l.setPosition(LegendPosition.BELOW_CHART_LEFT);
+//        l.setYOffset(11f);
 
-        XLabels xl = mChart.getXLabels();
-        xl.setTypeface(tf);
-        xl.setTextColor(Color.WHITE);
+        XAxis xAxis = mChart.getXAxis();
+        xAxis.setTypeface(tf);
+        xAxis.setTextSize(12f);
+        xAxis.setTextColor(Color.WHITE);
+        xAxis.setDrawGridLines(false);
+        xAxis.setDrawAxisLine(false);
+        xAxis.setSpaceBetweenLabels(1);
 
-        YLabels yl = mChart.getYLabels();
-        yl.setTypeface(tf);
-        yl.setTextColor(Color.WHITE);
+        YAxis leftAxis = mChart.getAxisLeft();
+        leftAxis.setTypeface(tf);
+        leftAxis.setTextColor(ColorTemplate.getHoloBlue());
+        leftAxis.setAxisMaxValue(200f);
+        leftAxis.setDrawGridLines(true);
+        
+        YAxis rightAxis = mChart.getAxisRight();
+        rightAxis.setTypeface(tf);
+        rightAxis.setTextColor(Color.RED);
+        rightAxis.setAxisMaxValue(900);
+        rightAxis.setStartAtZero(false);
+        rightAxis.setAxisMinValue(-200);
+        rightAxis.setDrawGridLines(false);
     }
 
     @Override
@@ -132,19 +136,17 @@ public class LineChartActivity2 extends DemoBase implements OnSeekBarChangeListe
 
         switch (item.getItemId()) {
             case R.id.actionToggleValues: {
-                if (mChart.isDrawYValuesEnabled())
-                    mChart.setDrawYValues(false);
-                else
-                    mChart.setDrawYValues(true);
+                for (DataSet<?> set : mChart.getData().getDataSets())
+                    set.setDrawValues(!set.isDrawValuesEnabled());
+
                 mChart.invalidate();
                 break;
             }
             case R.id.actionToggleHighlight: {
-                if (mChart.isHighlightEnabled())
-                    mChart.setHighlightEnabled(false);
-                else
-                    mChart.setHighlightEnabled(true);
-                mChart.invalidate();
+                if(mChart.getData() != null) {
+                    mChart.getData().setHighlightEnabled(!mChart.getData().isHighlightEnabled());
+                    mChart.invalidate();
+                }
                 break;
             }
             case R.id.actionToggleFilled: {
@@ -188,11 +190,8 @@ public class LineChartActivity2 extends DemoBase implements OnSeekBarChangeListe
                 break;
             }
             case R.id.actionToggleStartzero: {
-                if (mChart.isStartAtZeroEnabled())
-                    mChart.setStartAtZero(false);
-                else
-                    mChart.setStartAtZero(true);
-
+                mChart.getAxisLeft().setStartAtZero(!mChart.getAxisLeft().isStartAtZeroEnabled());
+                mChart.getAxisRight().setStartAtZero(!mChart.getAxisRight().isStartAtZeroEnabled());
                 mChart.invalidate();
                 break;
             }
@@ -205,6 +204,11 @@ public class LineChartActivity2 extends DemoBase implements OnSeekBarChangeListe
                 mChart.invalidate();
                 break;
             }
+            case R.id.actionToggleAutoScaleMinMax: {
+                mChart.setAutoScaleMinMaxEnabled(!mChart.isAutoScaleMinMaxEnabled());
+                mChart.notifyDataSetChanged();
+                break;
+            }
             case R.id.animateX: {
                 mChart.animateX(3000);
                 break;
@@ -215,17 +219,6 @@ public class LineChartActivity2 extends DemoBase implements OnSeekBarChangeListe
             }
             case R.id.animateXY: {
                 mChart.animateXY(3000, 3000);
-                break;
-            }
-            case R.id.actionToggleAdjustXLegend: {
-                XLabels xLabels = mChart.getXLabels();
-
-                if (xLabels.isAdjustXLabelsEnabled())
-                    xLabels.setAdjustXLabels(false);
-                else
-                    xLabels.setAdjustXLabels(true);
-
-                mChart.invalidate();
                 break;
             }
             case R.id.actionToggleFilter: {
@@ -275,38 +268,70 @@ public class LineChartActivity2 extends DemoBase implements OnSeekBarChangeListe
             xVals.add((i) + "");
         }
 
-        ArrayList<Entry> yVals = new ArrayList<Entry>();
+        ArrayList<Entry> yVals1 = new ArrayList<Entry>();
 
         for (int i = 0; i < count; i++) {
-            float mult = (range + 1);
-            float val = (float) (Math.random() * mult) + 3;// + (float)
+            float mult = range / 2f;
+            float val = (float) (Math.random() * mult) + 50;// + (float)
                                                            // ((mult *
                                                            // 0.1) / 10);
-            yVals.add(new Entry(val, i));
+            yVals1.add(new Entry(val, i));
         }
 
         // create a dataset and give it a type
-        LineDataSet set1 = new LineDataSet(yVals, "DataSet 1");
+        LineDataSet set1 = new LineDataSet(yVals1, "DataSet 1");
+        set1.setAxisDependency(AxisDependency.LEFT);
         set1.setColor(ColorTemplate.getHoloBlue());
-        set1.setCircleColor(ColorTemplate.getHoloBlue());
+        set1.setCircleColor(Color.WHITE);
         set1.setLineWidth(2f);
-        set1.setCircleSize(4f);
+        set1.setCircleSize(3f);
         set1.setFillAlpha(65);
         set1.setFillColor(ColorTemplate.getHoloBlue());
         set1.setHighLightColor(Color.rgb(244, 117, 117));
+        set1.setDrawCircleHole(false);
+        //set1.setFillFormatter(new MyFillFormatter(0f));
+//        set1.setDrawHorizontalHighlightIndicator(false);
+//        set1.setVisible(false);
+//        set1.setCircleHoleColor(Color.WHITE);
+
+        ArrayList<Entry> yVals2 = new ArrayList<Entry>();
+
+        for (int i = 0; i < count; i++) {
+            float mult = range;
+            float val = (float) (Math.random() * mult) + 450;// + (float)
+                                                           // ((mult *
+                                                           // 0.1) / 10);
+            yVals2.add(new Entry(val, i));
+        }
+
+        // create a dataset and give it a type
+        LineDataSet set2 = new LineDataSet(yVals2, "DataSet 2");
+        set2.setAxisDependency(AxisDependency.RIGHT);
+        set2.setColor(Color.RED);
+        set2.setCircleColor(Color.WHITE);
+        set2.setLineWidth(2f);
+        set2.setCircleSize(3f);
+        set2.setFillAlpha(65);
+        set2.setFillColor(Color.RED);
+        set2.setDrawCircleHole(false);
+        set2.setHighLightColor(Color.rgb(244, 117, 117));
+        //set2.setFillFormatter(new MyFillFormatter(900f));
 
         ArrayList<LineDataSet> dataSets = new ArrayList<LineDataSet>();
+        dataSets.add(set2);
         dataSets.add(set1); // add the datasets
 
         // create a data object with the datasets
         LineData data = new LineData(xVals, dataSets);
+        data.setValueTextColor(Color.WHITE);
+        data.setValueTextSize(9f);
 
         // set data
         mChart.setData(data);
     }
 
     @Override
-    public void onValueSelected(Entry e, int dataSetIndex) {
+    public void onValueSelected(Entry e, int dataSetIndex, Highlight h) {
         Log.i("Entry selected", e.toString());
     }
 

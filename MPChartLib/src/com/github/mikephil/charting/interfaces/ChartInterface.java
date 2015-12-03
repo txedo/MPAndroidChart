@@ -1,8 +1,10 @@
-
 package com.github.mikephil.charting.interfaces;
 
+import android.graphics.PointF;
 import android.graphics.RectF;
-import android.view.View;
+
+import com.github.mikephil.charting.data.ChartData;
+import com.github.mikephil.charting.formatter.ValueFormatter;
 
 /**
  * Interface that provides everything there is to know about the dimensions,
@@ -12,27 +14,27 @@ import android.view.View;
  */
 public interface ChartInterface {
 
-    public float getOffsetBottom();
+    float getXChartMin();
 
-    public float getOffsetTop();
+    float getXChartMax();
 
-    public float getOffsetLeft();
+    float getYChartMin();
 
-    public float getOffsetRight();
-
-    public float getDeltaX();
-
-    public float getDeltaY();
-
-    public float getYChartMin();
-
-    public float getYChartMax();
-
-    public int getWidth();
-
-    public int getHeight();
+    float getYChartMax();
     
-    public RectF getContentRect();
+    int getXValCount();
+
+    int getWidth();
+
+    int getHeight();
+
+    PointF getCenterOfView();
+
+    PointF getCenterOffsets();
+
+    RectF getContentRect();
     
-    public View getChartView();
+    ValueFormatter getDefaultValueFormatter();
+
+    ChartData getData();
 }
